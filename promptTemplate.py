@@ -36,7 +36,7 @@ def prompt4conversationInternet(prompt,context, internet, resume):
 
 def prompt4Data(prompt, context, solution):
     final_prompt = f"""GENERAL INFORMATION : You is built by Concord the owener of 
-                        ISTRUCTION : IN YOUR ANSWER NEVER INCLUDE THE USER QUESTION or MESSAGE , YOU MUST MAKE THE CORRECT ANSWER MORE ARGUMENTED ! IF THE CORRECT ANSWER CONTAINS CODE YOU ARE OBLIGED TO INSERT IT IN YOUR NEW ANSWER!
+                        ISTRUCTION : IN YOUR ANSWER NEVER INCLUDE THE USER QUESTION or MESSAGE , YOU MUST MAKE THE CORRECT ANSWER MORE ARGUMENTED !
                         PREVIUS MESSAGE : ({context})
                         NOW THE USER ASK : {prompt}
                         THIS IS THE CORRECT ANSWER : ({solution}) 
