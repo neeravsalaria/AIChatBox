@@ -38,14 +38,22 @@ from pydub import AudioSegment
 import os
 #from transformers import AutoTokenizer as AT, AutoModelForSeq2SeqLM
 from transformers import TapexTokenizer, BartForConditionalGeneration
-
+#from transformers import AutoTokenizer, AutoModelForTableQuestionAnswering
+#from transformers import pipeline
+#import torch
+#from diffusers import DiffusionPipeline, DPMSolverMultistepScheduler
+#from diffusers.utils import export_to_video
 
 hf = None
 repo_id = "sentence-transformers/all-mpnet-base-v2"
 tokenizer = TapexTokenizer.from_pretrained("microsoft/tapex-large-finetuned-wtq")
 model_new = BartForConditionalGeneration.from_pretrained("microsoft/tapex-large-finetuned-wtq")
+#model_new = BartForConditionalGeneration.from_pretrained("microsoft/tapex-base")
 #tokenizer = AT.from_pretrained("microsoft/tapex-large-finetuned-wtq")
 #model_new = AutoModelForSeq2SeqLM.from_pretrained("microsoft/tapex-large-finetuned-wtq")
+# Load model directly
+#tokenizer = AutoTokenizer.from_pretrained("google/tapas-large-finetuned-wtq")
+#model_new = AutoModelForTableQuestionAnswering.from_pretrained("google/tapas-large-finetuned-wtq")
 
 if 'hf_token' in st.session_state:
     if 'hf' not in st.session_state:
@@ -149,7 +157,7 @@ with st.sidebar:
         # YOU NEED ADD THE NAME AT 144 LINE
 
         #plugins for conversation
-        plugins = ["🛑 No PLUGIN","🌐 Web Search", "🔗 Talk with Website" , "📋 Talk with your DATA", "📋 Talk with your DB", "📝 Talk with your DOCUMENTS", "🎧 Talk with your AUDIO", "🎥 Talk with YT video", "🧠 GOD MODE" ,"💾 Upload saved VectorStore"]
+        plugins = ["🛑 No PLUGIN","🌐 Web Search", "🔗 Talk with Website" , "📋 Talk with your DATA", "📋 Talk with your DB", "📝 Talk with your DOCUMENTS", "🎧 Talk with your AUDIO", "🎥 Talk with YT video", "🧠 GOD MODE" ,"💾 Upload saved VectorStore", "📝 Text To Video 🎥"]
         if 'plugin' not in st.session_state:
             st.session_state['plugin'] = st.selectbox('🔌 Plugins', plugins, index=0)
         else:
@@ -408,7 +416,6 @@ with st.sidebar:
                     del st.session_state['pgdf']
                 del st.session_state['plugin']
                 st.experimental_rerun()
-
 
 
 # DOCUMENTS PLUGIN
@@ -846,13 +853,23 @@ def generate_response(prompt):
             else:  
                 with st.spinner('🚀 Using tool to get information...'):
                     #encoding = tokenizer(table, prompt, padding=True, return_tensors="pt")
-                    encoding = tokenizer(st.session_state['pgdf'], prompt, padding=True, return_tensors="pt")
+                    #encoding = tokenizer(st.session_state['pgdf'], prompt, padding=True, return_tensors="pt")
+                    encoding = tokenizer(st.session_state['pgdf'], prompt, return_tensors="pt")
                     outputs = model_new.generate(**encoding)
+                    #tqa = pipeline(task="table-question-answering", model="google/tapas-large-finetuned-wtq")
+                    #solution = tqa(table=st.session_state['pgdf'], query=prompt)["answer"]
                     solution = tokenizer.batch_decode(outputs, skip_special_tokens=True)[0]
                     #solution = st.session_state['pgdf'].sketch.ask(prompt, call_display=False)
                     final_prompt = prompt4Data(prompt, context, solution)
 
 
+        elif st.session_state['plugin'] == "📝 Talk with your DOCUMENTS" and 'pdf' in st.session_state:
+             with st.spinner('🚀 Using tool to get information...'):
+                  pipe = DiffusionPipeline.from_pretrained("damo-vilab/text-to-video-ms-1.7b", torch_dtype=torch.float16, variant="fp16")
+                  pipe.scheduler = DPMSolverMultistepScheduler.from_config(pipe.scheduler.config)
+                  pipe.enable_model_cpu_offload()
+                  prompt = "Spiderman is surfing"
+                  
         elif st.session_state['plugin'] == "📝 Talk with your DOCUMENTS" and 'pdf' in st.session_state:
             #get only last message
             context = f"User: {st.session_state['past'][-1]}\nBot: {st.session_state['generated'][-1]}\n"
